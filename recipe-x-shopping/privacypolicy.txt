@@ -1,0 +1,31 @@
+Privacy Policy
+
+Effective Date: 28 sep 2023
+project in minds recipe-x-shopping ("us", "we", or "our") has developed the recipe-x-shopping mobile application (the "App"). This Privacy Policy is meant to help you understand how we collect, use, and safeguard your information when you use our App.
+Information We Collect
+
+The App does not collect any personal information or data from users. We do not require you to provide any personal information such as your name, email address, or location.
+
+Data Storage
+
+All data generated or entered within the App is stored locally on your mobile device. We do not transmit any of this data over the internet or to external servers.
+
+Permissions
+
+The App may request certain permissions on your device to function properly, such as access to your device's storage . These permissions are solely for the purpose of the App's functionality and are not used to collect or transmit any personal data.
+
+Data Security
+
+We take data security seriously. The data stored on your device is protected by the security features of your mobile operating system. We do not have access to, or control over, the security of data stored on your device.
+
+Changes to this Privacy Policy
+
+We may update our Privacy Policy from time to time. Any changes to this policy will be reflected in an updated Privacy Policy posted within the App. It is your responsibility to review this Privacy Policy periodically for any changes.
+
+Contact Us
+
+If you have any questions or concerns about this Privacy Policy or the App, please contact us at trickypalash@duck.com
+
+By using the App, you consent to this Privacy Policy.
+
+Last updated: 2023-09-28
