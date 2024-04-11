@@ -104,6 +104,9 @@
       <div class="export-container">
         <button id="exportPdfBtn">Export PDF</button>
         <button id="exportJsonBtn">Export JSON</button>
+        <button id="exportHtmlBtn">Export Html</button>
+        <button id="exportHtmlBtn" onClick="exportCarouselAsPpt()">Export Html As PPT </button>
+	
       </div>
     </div>
 
@@ -252,6 +255,241 @@
 
 	await pdf.save('diagrams.pdf');
     });
+
+    document.getElementById('exportHtmlBtn').addEventListener('click',() => {
+	const carousel = document.querySelector('.image-carousel');
+	const carouselItems = carousel.querySelectorAll('.carousel-item');
+
+	let htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exported Carousel</title>
+  <style>
+    .image-carousel {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .carousel-item {
+      margin: 10px;
+    }
+    .carousel-item svg {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="image-carousel">
+`;
+
+	carouselItems.forEach((item) => {
+	    const svgElement = item.querySelector('svg');
+	    const svgString = new XMLSerializer().serializeToString(svgElement);
+	    htmlContent += `    <div class="carousel-item">${svgString}</div>\n`;
+	});
+
+	htmlContent += `  </div>
+</body>
+</html>`;
+
+	const blob = new Blob([htmlContent], { type: 'text/html' });
+	const url = URL.createObjectURL(blob);
+
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = 'exported_carousel.html';
+	link.click();
+
+	URL.revokeObjectURL(url);
+    });
+
+    function exportCarouselAsPpt() {
+	const carousel = document.querySelector('.image-carousel');
+	const carouselItems = carousel.querySelectorAll('.carousel-item');
+
+	let htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exported Carousel PPT</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .carousel-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      width: 100%;
+      height: 90vh;
+      }
+       .carousel-arrow {
+	   font-size: 24px;
+	   cursor: pointer;
+	   margin: 0 20px;
+       }
+       .carousel-image {
+	   max-width: 100%;
+	   max-height: 100%;
+	   object-fit: contain;
+	   cursor: zoom-in;
+       }
+       .carousel-image.zoomed {
+	   cursor: zoom-out;
+	   max-width: none;
+	   max-height: none;
+       }
+       .carousel-footer {
+	   display: flex;
+	   justify-content: center;
+	   align-items: center;
+	   overflow-x: auto;
+	   max-width: 100%;
+	   padding: 10px;
+       }
+       .carousel-thumbnail {
+	   width: 100px;
+	   height: 100px;
+	   object-fit: contain;
+	   margin: 0 5px;
+	   cursor: pointer;
+       }
+       .fullscreen {
+	   position: fixed;
+	   top: 0;
+	   left: 0;
+	   width: 100%;
+	   height: 100%;
+	   background-color: grey;
+	   display: flex;
+	   justify-content: center;
+	   align-items: center;
+	   z-index: 9999;
+       }
+       .fullscreen .carousel-image {
+	   max-width: 100%;
+	   max-height: 100%;
+	   object-fit: contain;
+       }
+       .fullscreen-button {
+	   position: fixed;
+	   top: 20px;
+	   right: 20px;
+	   padding: 10px;
+	   background-color: white;
+	   border: none;
+	   border-radius: 5px;
+	   cursor: pointer;
+	   z-index: 10000;
+       }
+</style>
+</head>
+<body>
+  <div class="carousel-container">
+    <div class="carousel-arrow" onclick="showPreviousImage()">&lt;</div>
+    <img class="carousel-image" src="" alt="Carousel Image" onclick="toggleZoom()">
+    <div class="carousel-arrow" onclick="showNextImage()">&gt;</div>
+  </div>
+  <div class="carousel-footer">`;
+
+    carouselItems.forEach((item, index) => {
+    const svgElement = item.querySelector('svg');
+    const svgString = new XMLSerializer().serializeToString(svgElement);
+    const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+
+    htmlContent += `    <img class="carousel-thumbnail" src="${svgDataUrl}" alt="Thumbnail ${index}" onclick="showImage(${index})">\n`;
+    });
+
+    htmlContent += `  </div>
+  <button class="fullscreen-button" onclick="toggleFullscreen()">Enter PPT Mode</button>
+  <script>
+    const carouselImages = document.querySelectorAll('.carousel-thumbnail');
+    const carouselImage = document.querySelector('.carousel-image');
+    let currentImageIndex = 0;
+    let isFullscreen = false;
+
+    function showImage(index) {
+    currentImageIndex = index;
+    carouselImage.src = carouselImages[currentImageIndex].src;
+    updateFullscreenImage();
+    }
+
+    function showPreviousImage() {
+    currentImageIndex = (currentImageIndex - 1 + carouselImages.length) % carouselImages.length;
+    showImage(currentImageIndex);
+    }
+
+    function showNextImage() {
+    currentImageIndex = (currentImageIndex + 1) % carouselImages.length;
+    showImage(currentImageIndex);
+    }
+
+    function toggleZoom() {
+    carouselImage.classList.toggle('zoomed');
+    }
+
+    function updateFullscreenImage() {
+    const fullscreenImage = document.querySelector('.fullscreen .carousel-image');
+    if (fullscreenImage) {
+    fullscreenImage.src = carouselImages[currentImageIndex].src;
+    }
+    }
+
+    function toggleFullscreen() {
+    isFullscreen = !isFullscreen;
+    if (isFullscreen) {
+    document.body.innerHTML = \`
+    <div class="fullscreen">
+      <div class="carousel-arrow" onclick="showPreviousImage()">&lt;</div>
+      <img class="carousel-image" src="\${carouselImage.src}" alt="Carousel Image">
+      <div class="carousel-arrow" onclick="showNextImage()">&gt;</div>
+      <button class="fullscreen-button" onclick="toggleFullscreen()">Exit PPT Mode (Esc)</button>
+    </div>
+    \`;
+    } else {
+    location.reload();
+    }
+    }
+
+    document.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') {
+    showPreviousImage();
+    } else if (event.key === 'ArrowRight') {
+    showNextImage();
+    } else if (event.key === 'Enter' || event.key === ' ') {
+    toggleFullscreen();
+    } else if (event.key === 'Escape') {
+    if (isFullscreen) {
+    toggleFullscreen();
+    }
+    }
+    });
+
+    showImage(currentImageIndex);
+    <\/script>
+</body>
+</html>`;
+
+const blob = new Blob([htmlContent], { type: 'text/html' });
+const url = URL.createObjectURL(blob);
+
+const link = document.createElement('a');
+link.href = url;
+link.download = 'exported_carousel_ppt.html';
+link.click();
+
+URL.revokeObjectURL(url);
+}
     
     document.getElementById('exportJsonBtn').addEventListener('click', () => {
       const data = mermaidTextAreas.map((textArea) => textArea.value);
