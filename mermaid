@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mermaid.js Renderer</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      display: flex;
+      height: 100%;
+    }
+
+    .sidebar {
+      flex: 0 0 300px;
+      background-color: #f1f1f1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .text-area-container {
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background-color: #fff;
+    }
+
+    .frame-number {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .text-area {
+      width: 100%;
+      height: 200px;
+      resize: none;
+      font-size: 14px;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .export-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .diagram-container {
+      height: 100%;
+    }
+
+    .active-text-area {
+      background-color: #e6e6e6;
+    }
+
+    .image-carousel {
+      flex: 0 0 200px;
+      background-color: #f1f1f1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .carousel-item {
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .carousel-item img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <h2>Mermaid.js Renderer</h2>
+      <div class="text-area-container-holder">
+	<div class="text-area-container active-text-area">
+          <div class="frame-number">Frame 1</div>
+          <textarea class="text-area" id="mermaidTextArea-0" placeholder="Enter Mermaid.js code here"></textarea>
+	</div>
+      </div>
+      <div class="button-container">
+        <button id="deleteBtn">Delete</button>
+        <button id="prevBtn">Previous</button>
+        <button id="renderBtn">Render</button>
+        <button id="addNextBtn">Add Next</button>
+        <button id="nextBtn">Next</button>
+      </div>
+      <div class="export-container">
+        <button id="exportPdfBtn">Export PDF</button>
+        <button id="exportJsonBtn">Export JSON</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="diagram-container">
+        <div id="mermaidDiagram"></div>
+      </div>
+    </div>
+
+    <div class="image-carousel">
+      <h3>Diagram Carousel</h3>
+      <div id="carouselContainer"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.3/dist/mermaid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvg@1.5.3/dist/browser/canvg.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg2pdf@1.1.1/src/index.min.js"></script>  
+  <script>
+    let currentIndex = 0;
+    const sidebar = document.querySelector('.sidebar');
+    const buttonContainer = document.querySelector('.button-container');
+    const mermaidTextAreas = [document.getElementById('mermaidTextArea-0')];
+    const mermaidDiagram = document.getElementById('mermaidDiagram');
+    const carouselContainer = document.getElementById('carouselContainer');
+
+    function updateTextArea() {
+      mermaidTextAreas.forEach((ta, i) => {
+        ta.parentElement.style.display = i === currentIndex ? 'block' : 'none';
+        ta.parentElement.classList.toggle('active-text-area', i === currentIndex);
+      });
+    }
+
+    function createNewTextArea() {
+      const newTextArea = document.createElement('textarea');
+      newTextArea.classList.add('text-area');
+      newTextArea.id = `mermaidTextArea-${currentIndex + 1}`;
+      newTextArea.placeholder = 'Enter Mermaid.js code here';
+
+      const frameNumber = document.createElement('div');
+      frameNumber.classList.add('frame-number');
+      frameNumber.textContent = `Frame ${currentIndex + 2}`;
+
+      const newTextAreaContainer = document.createElement('div');
+      newTextAreaContainer.classList.add('text-area-container');
+      newTextAreaContainer.appendChild(frameNumber);
+      newTextAreaContainer.appendChild(newTextArea);
+
+	sidebar.insertBefore(newTextAreaContainer, buttonContainer);
+	
+      mermaidTextAreas.push(newTextArea);
+    }
+
+    document.getElementById('deleteBtn').addEventListener('click', () => {
+      if (mermaidTextAreas.length > 1) {
+        mermaidTextAreas.splice(currentIndex, 1);
+        currentIndex = Math.max(currentIndex - 1, 0);
+        mermaidTextAreas[currentIndex].parentElement.remove();
+        updateTextArea();
+        renderDiagram();
+      }
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateTextArea();
+        renderDiagram();
+      }
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (currentIndex === mermaidTextAreas.length - 1) {
+        createNewTextArea();
+      }
+      currentIndex++;
+      const currentTextArea = mermaidTextAreas[currentIndex];
+      if (!currentTextArea.value) {
+        currentTextArea.value = mermaidTextAreas[currentIndex - 1].value;
+      }
+      updateTextArea();
+      renderDiagram();
+    });
+
+    document.getElementById('addNextBtn').addEventListener('click', () => {
+      const newTextArea = document.createElement('textarea');
+      newTextArea.classList.add('text-area');
+      newTextArea.id = `mermaidTextArea-${currentIndex + 1}`;
+      newTextArea.placeholder = 'Enter Mermaid.js code here';
+      newTextArea.value = mermaidTextAreas[currentIndex].value;
+
+      const frameNumber = document.createElement('div');
+      frameNumber.classList.add('frame-number');
+      frameNumber.textContent = `Frame ${currentIndex + 2}`;
+
+      const newTextAreaContainer = document.createElement('div');
+      newTextAreaContainer.classList.add('text-area-container');
+      newTextAreaContainer.appendChild(frameNumber);
+      newTextAreaContainer.appendChild(newTextArea);
+
+      sidebar.insertBefore(newTextAreaContainer, mermaidTextAreas[currentIndex + 1].parentElement);
+      mermaidTextAreas.splice(currentIndex + 1, 0, newTextArea);
+      currentIndex++;
+      updateTextArea();
+      renderDiagram();
+    });
+
+    document.getElementById('renderBtn').addEventListener('click', () => {
+	renderDiagram();
+    });
+
+    document.getElementById('exportPdfBtn').addEventListener('click', async () => {
+	const pdf = new jspdf.jsPDF();
+	const diagrams = document.querySelectorAll('.carousel-item');
+
+	for (let i = 0; i < diagrams.length; i++) {
+	    const diagram = diagrams[i];
+	    const svgElement = diagram.querySelector('svg');
+	    const svgString = new XMLSerializer().serializeToString(svgElement);
+
+	    const canvas = document.createElement('canvas');
+	    const ctx = canvas.getContext('2d');
+
+	    const pdfWidth = pdf.internal.pageSize.getWidth();
+	    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+	    canvas.width = pdfWidth;
+	    canvas.height = pdfHeight;
+
+	    await canvg(canvas, svgString, {
+		ignoreDimensions: true,
+		scaleWidth: pdfWidth,
+		scaleHeight: pdfHeight,
+	    });
+
+	    const imgData = canvas.toDataURL('image/png');
+
+	    if (i > 0) {
+		pdf.addPage();
+	    }
+
+	    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+	}
+
+	await pdf.save('diagrams.pdf');
+    });
+    
+    document.getElementById('exportJsonBtn').addEventListener('click', () => {
+      const data = mermaidTextAreas.map((textArea) => textArea.value);
+      const jsonData = JSON.stringify({ data }, null, 2);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'diagrams.json';
+      link.click();
+    });
+
+    function renderDiagram() {
+	const currentTextArea = mermaidTextAreas[currentIndex];
+	const mermaidCode = currentTextArea.value;
+	mermaid.initialize({
+	    startOnLoad: false,
+	    securityLevel: 'loose',
+            theme: 'default',
+	    flowchart: {
+		useMaxWidth: false,
+		htmlLabels: false
+	    },	    
+	});
+	mermaid.render('mermaid-diagram', mermaidCode, (svgCode) => {
+            mermaidDiagram.innerHTML = svgCode;
+            updateCarousel();
+	})
+    }
+
+    function updateCarousel() {
+      carouselContainer.innerHTML = '';
+      mermaidTextAreas.forEach((textArea, index) => {
+        const mermaidCode = textArea.value;
+        mermaid.render(`graph-${index}`, mermaidCode, (svgCode) => {
+          const carouselItem = document.createElement('div');
+          carouselItem.classList.add('carousel-item');
+          carouselItem.innerHTML = svgCode;
+          carouselItem.addEventListener('click', () => {
+            currentIndex = index;
+            updateTextArea();
+            renderDiagram();
+          });
+          carouselContainer.appendChild(carouselItem);
+        });
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        document.getElementById('prevBtn').click();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        document.getElementById('nextBtn').click();
+      }
+    });
+
+    updateTextArea();
+    renderDiagram();
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+    });
+  </script>
+</body>
+</html>
